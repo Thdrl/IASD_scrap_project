@@ -43,7 +43,7 @@ class LidlSpider(scrapy.Spider):
             self.logger.error(f'File not found: {json_file_path}')
             return
         with open(json_file_path, 'r') as file:
-            urls = json.load(file)[100:]
+            urls = json.load(file)
 
             for url in urls:
               print(url)
@@ -75,7 +75,7 @@ class LidlSpider(scrapy.Spider):
       instructions = clean_instructions(instruction_list) 
       tip = response.xpath("//p[contains(., 'Conseil')]/text()").get()
 
-      
+      image = response.xpath("//picture/img/@src").getall()[0]
 
       if tip != None:
           instructions += tip
