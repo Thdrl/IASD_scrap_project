@@ -1,0 +1,8 @@
+from https://github.com/fictivekin/openrecipes
+170k+ recipes
+example : 
+{ "_id" : { "$oid" : "551b3c2396cc6233c0d0b48c" }, "name" : "Homemade Butter Burgers", "ingredients" : "½ pounds FOR THE BURGERS:\n⅓ pounds Extra Lean Ground Sirloin Beef\n1 whole Ground Waygu Beef\n1 teaspoon Onion, grated\n½ teaspoons Sea Salt\n2 Tablespoons Black Pepper\n4 Tablespoons Butter, Diced\n8 slices Vegetable Oil\n4 whole Cheddar Cheese (or American Cheese If You Like)", "url" : "http://tastykitchen.com/recipes/main-courses/homemade-butter-burgers/", "image" : "http://tastykitchen.com/recipes/wp-content/uploads/sites/2/2015/03/Homemade-Butter-Burgers-4-410x273.jpg", "ts" : { "$date" : 1427848227834 }, "cookTime" : "PT8M", "source" : "tastykitchen", "recipeYield" : "4", "datePublished" : "2015-03-29", "prepTime" : "PT5M", "description" : "These super juicy smashed butter burgers are a real treat and simply the best dive burgers you could imagine." }
+items :
+_id, name, ingredients, url, image, ts, cookTime, source, recipeYield, datePublished, prepTime, description
+
+all items are strings and badly formatted, work to do :(
