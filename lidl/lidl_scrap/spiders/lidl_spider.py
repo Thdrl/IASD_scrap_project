@@ -33,7 +33,7 @@ def clean_instructions(instructions):
 class LidlSpider(scrapy.Spider):
     name = "lidl_spider"
     custom_settings = {
-        "DOWNLOAD_DELAY": "1",
+        "DOWNLOAD_DELAY": ".25",
     }
 
     def start_requests(self):
@@ -76,12 +76,14 @@ class LidlSpider(scrapy.Spider):
       tip = response.xpath("//p[contains(., 'Conseil')]/text()").get()
 
       image = response.xpath("//picture/img/@src").getall()[0]
+      category = response.xpath("normalize-space(//a[contains(@class, 'mTagBox-linkItem')][1]/text())").get()
 
       if tip != None:
           instructions += tip
 
       data = {
           'title': title,
+          'category': category,
           'difficulty': difficulty,
           'time': time,
           'servings': nb_servings,
