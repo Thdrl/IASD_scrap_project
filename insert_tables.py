@@ -12,8 +12,6 @@ db_params = get_db_params()
 conn = psycopg2.connect(db_params)
 cursor = conn.cursor()
 
-batch_size = 1024
-
 #insert lidl
 json_file_path = 'lidl/output.json'
 with open(json_file_path) as f:

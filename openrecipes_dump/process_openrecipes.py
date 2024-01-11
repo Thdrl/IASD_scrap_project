@@ -303,6 +303,76 @@ def normalize_categ(category):
     
     return category
 
+def clean_translated_ingredients(translated_ings):
+    clean = []
+    for ing in translated_ings:
+        #remove accents
+        ing = unidecode.unidecode(ing)
+        #remove capital letters 
+        ing = ing.lower()
+        #remove 'de ', "l' ", 'du ', 'des ', "d' ", 'le ', 'les ' if leading
+        for prefix in ['de ', "l'", 'du ', 'des ', "d'", 'le ', 'les ']:
+            if ing.startswith(prefix):
+                ing = ing[len(prefix):]
+        #oe
+        ing = re.sub(r'œ', 'oe', ing)
+        clean.append(ing)
+        #dele
+    return clean
+
+##UNIT CONVERSION
+
+def translation_unit_mapping(english_unit):
+    translation_map = {
+        None: None,
+        'g': 'g',
+        'ml': 'ml',
+        'tbsp': 'c. a s.',
+        'tsp': 'c. a c.',
+        'cans': 'boites',
+        'sticks': 'batonnets',
+        'clove': 'gousse',
+        'jars': 'pots',
+        'slices': 'tranches',
+        'bottle': 'bouteille',
+        'cm': 'cm',
+        'sprigs': 'brins',
+        'L': 'L',
+        'pinches': 'pincees',
+        'kg': 'kg',
+        'fennel': 'fenouil',
+        'handfuls': 'poignees',
+    }
+    return translation_map.get(english_unit, english_unit)
+
+def uncommon_ingredient(ingredient, common_ingredients):
+    return ingredient not in common_ingredients
+
+def convert_to_metric(value, unit):
+    conversion_factors = {
+        'cups': {'factor': 236.588, 'metric_unit': 'ml'},
+        'oz': {'factor': 28.3495, 'metric_unit': 'g'},
+        'lb': {'factor': 453.592, 'metric_unit': 'g'},
+        'pints': {'factor': 473.176, 'metric_unit': 'ml'},
+    }
+    if unit in conversion_factors:
+        factor = conversion_factors[unit]['factor']
+        metric_unit = conversion_factors[unit]['metric_unit']
+        return value * factor, metric_unit
+    else:
+        return value, unit
+
+def get_difficulty_from_nb_ingredients(nb_ingredients):
+    if nb_ingredients <= 5:
+        return '1'
+    elif nb_ingredients <= 10:
+        return '2'
+    else:
+        return '3'
+
+
+
+
 ## GET COMMON INGREDIENTS
 
 ingredients = list(chain.from_iterable([clean_ingredient(line['ingredients'])[2] for line in lines]))
@@ -323,7 +393,7 @@ translate_ing = True
 
 import deepl
 
-auth_key = '9093d919-3022-b8c7-19ba-93ceff08f8d7:fx'
+auth_key = 'x'
 translator = deepl.Translator(auth_key)
 if translate_ing:       
     translated_ingredients = []
@@ -332,13 +402,83 @@ if translate_ing:
             translated_ingredients.append(translator.translate_text(ingredient, target_lang='FR').text)
 
 
+translated_ingredients = clean_translated_ingredients(translated_ingredients)
 
 ##MAIN FUNC
 
 def process_line(line):
-    
+        #get raw data
+        raw_ingredients = line.get('ingredients')
+        recipeYield = line.get('recipeYield')
+        prepTime = line.get('prepTime')
+        url = line.get('url')
+        image = line.get('image')
+        totalTime = line.get('totalTime')
+        cookTime = line.get('cookTime')
+        name = line.get('name') 
+        source = line.get('source')
+        category = line.get('recipeCategory')
+        
+        #process data
+        ingredient_values, ingredient_units, ingredients = clean_ingredients(raw_ingredients)
+        if any(ingredient is None for ingredient in ingredients):
+            continue
+
+        difficulty = get_difficulty_from_nb_ingredients(len(ingredients))
+        time = get_clean_time(line)
+        if source is None:
+            source = 'openrecipes'
+        recipeYield = clean_yield(recipeYield)
+
+        #convert to metric system
+        for i, value in enumerate(ingredient_values):
+            ingredient_values[i], ingredient_units[i] = convert_to_metric(value, ingredient_units[i])
+
+
+            #delete 
+            if ingredient_units[i] not in unique_units:
+                unique_units.append(ingredient_units[i])
 
 
 
+        if category not in common_categs:
+            category = None
 
-    return line 
+        #deletion checks
+        if time is None:
+            continue
+        if int(time) > 240:
+            continue
+        if (len(ingredients) > 25) or (len(ingredients) < 3):
+            continue
+        if recipeYield is None:
+            continue
+        if any(uncommon_ingredient(ingredient, common_ingredients) for ingredient in ingredients):
+            continue
+        # if list(set(ingredients)) != ingredients:
+        #     continue
+        
+        #translate ingredients to french if LANG == 'fr'
+        assert LANG in ['fr', 'en']
+        if LANG == 'fr':
+            #make the french translation by mapping the id between ingredients and translated_ingredients
+            ingredients = [translated_ingredients[common_ingredients.index(ingredient)] for ingredient in ingredients]
+            if category is not None:
+                category = translated_categories[common_categs.index(category)]
+            #translate units
+            ingredient_units = [translation_unit_mapping(unit) for unit in ingredient_units]
+
+
+        return {
+            'name': name,
+            'source': source,
+            'category': category,
+            'url': url,
+            'image': image,
+            'servings': recipeYield,
+            'time': time,
+            'difficulty': difficulty,
+            'ingredients': ingredients,
+            'ingredient_values': ingredient_values,
+            'ingredient_units': ingredient_units
+        }
