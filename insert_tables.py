@@ -2,8 +2,9 @@ import requests
 import json
 import psycopg2
 import ast
+import tdqm
 
-from utils import batch_insert, get_db_params, get_or_create_id, insert_line
+from utils import get_db_params, get_or_create_id, insert_line
 from lidl.process_lidl import process_line as process_lidl_line
 from openrecipes_dump.process_openrecipes import process_line as process_openrecipes_line
 
@@ -25,6 +26,7 @@ with open(json_file_path) as f:
 
         #commit
         conn.commit()
+    print('loaded lidl recipes into db')
 
 #insert openrecipes 
 json_file_path = 'openrecipes/openrecipes.json'
@@ -40,6 +42,7 @@ with open(json_file_path) as f:
 
         #commit
         conn.commit()
+    print('loaded openrecipes recipes into db')
         
 
 # Close communication with the database

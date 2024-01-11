@@ -1,11 +1,4 @@
 import json
-# line processing for openrecipes from the notebook
-# TODO
-
-def process_line(line):
-    # TODO
-    data = json.loads(line)
-    return data
 
 def get_db_params():
     return {
@@ -14,19 +7,6 @@ def get_db_params():
     'password': 'your_password',
     'host': 'localhost'
     }
-
-def batch_insert(cursor, table, data):
-    if not data:
-        return
-
-    keys = data[0].keys()
-    columns = ', '.join(keys)
-    placeholders = ', '.join(['%s'] * len(keys))
-    query = f'INSERT INTO {table} ({columns}) VALUES ({placeholders})'
-    
-    values = [tuple(d[key] for key in keys) for d in data]
-    cursor.executemany(query, values)
-
 
 def get_or_create_id(cursor, table, column, value):
     cursor.execute(f"SELECT id FROM {table} WHERE {column} = %s", (value,))
