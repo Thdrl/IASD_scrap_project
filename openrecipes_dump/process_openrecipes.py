@@ -4,8 +4,12 @@ import os
 import json
 import re
 import unidecode
+import ast
 from collections import Counter
 from itertools import chain
+
+
+import deepl
 
 ##YIELD CLEANING
 
@@ -266,7 +270,7 @@ def clean_ingredient(ingredients_str):
         
         quantity, unit, name = parse_ingredient(ingredient)
         if quantity is None:
-            continue
+            return None
         quantities.append(quantity)
 
         if unit not in valid_unit_list:
@@ -373,40 +377,40 @@ def get_difficulty_from_nb_ingredients(nb_ingredients):
 
 
 
-## GET COMMON INGREDIENTS
-
-ingredients = list(chain.from_iterable([clean_ingredient(line['ingredients'])[2] for line in lines]))
-counts = Counter(ingredients)
-print(counts.most_common(200))
-#200 most common ingredients in a list 
-common_ingredients = [ing for ing,ct in counts.most_common(200)]
-
-
-## TRANSLATION
-common_categories = ['breakfast', 'main', 'dessert', 'appetizer', 'soup', 'bread', 'miscellaneous', 'salad', 'snack', 'side dish']
-#semi hand-made
-translated_categories = ['petit déjeuner', 'plat', 'dessert', 'appéritif', 'soupe', 'pain', 'divers', 'salade', 'gouter', 'accompagnement']
-
 
 LANG = 'fr' #or 'en'
-translate_ing = True
 
-import deepl
 
-auth_key = 'x'
-translator = deepl.Translator(auth_key)
-if translate_ing:       
+def get_ingredients_and_translate(file, nb_ings=250):
+    tot_ingredients = []
+    for line in file:
+        line = ast.literal_eval(line)
+        ingredients = clean_ingredient(line['ingredients'])[2]
+        tot_ingredients.append(ingredients)
+
+    counts = Counter(tot_ingredients)
+    #200 most common ingredients in a list 
+    common_ingredients = [ing for ing,ct in counts.most_common(nb_ings)]
+
+    auth_key = '9093d919-3022-b8c7-19ba-93ceff08f8d7:fx'
+    translator = deepl.Translator(auth_key)     
     translated_ingredients = []
     for ingredient in common_ingredients:
         if len(ingredient) > 0:
             translated_ingredients.append(translator.translate_text(ingredient, target_lang='FR').text)
 
 
-translated_ingredients = clean_translated_ingredients(translated_ingredients)
+    translated_ingredients = clean_translated_ingredients(translated_ingredients)
+    return common_ingredients, translated_ingredients
 
 ##MAIN FUNC
 
-def process_line(line):
+def process_line(line, common_ingredients, translated_ingredients):
+        #common categories
+        common_categories = ['breakfast', 'main', 'dessert', 'appetizer', 'soup', 'bread', 'miscellaneous', 'salad', 'snack', 'side dish']
+        #semi hand-made translation
+        translated_categories = ['petit déjeuner', 'plat', 'dessert', 'appéritif', 'soupe', 'pain', 'divers', 'salade', 'gouter', 'accompagnement']
+
         #get raw data
         raw_ingredients = line.get('ingredients')
         recipeYield = line.get('recipeYield')
@@ -420,9 +424,9 @@ def process_line(line):
         category = line.get('recipeCategory')
         
         #process data
-        ingredient_values, ingredient_units, ingredients = clean_ingredients(raw_ingredients)
+        ingredient_values, ingredient_units, ingredients = clean_ingredient(raw_ingredients)
         if any(ingredient is None for ingredient in ingredients):
-            continue
+            return None
 
         difficulty = get_difficulty_from_nb_ingredients(len(ingredients))
         time = get_clean_time(line)
@@ -434,29 +438,22 @@ def process_line(line):
         for i, value in enumerate(ingredient_values):
             ingredient_values[i], ingredient_units[i] = convert_to_metric(value, ingredient_units[i])
 
-
-            #delete 
-            if ingredient_units[i] not in unique_units:
-                unique_units.append(ingredient_units[i])
-
-
-
-        if category not in common_categs:
+        if category not in common_categories:
             category = None
 
         #deletion checks
         if time is None:
-            continue
+            return None
         if int(time) > 240:
-            continue
+            return None
         if (len(ingredients) > 25) or (len(ingredients) < 3):
-            continue
+            return None
         if recipeYield is None:
-            continue
+            return None
         if any(uncommon_ingredient(ingredient, common_ingredients) for ingredient in ingredients):
-            continue
+            return None
         # if list(set(ingredients)) != ingredients:
-        #     continue
+        #     return None
         
         #translate ingredients to french if LANG == 'fr'
         assert LANG in ['fr', 'en']
@@ -464,13 +461,13 @@ def process_line(line):
             #make the french translation by mapping the id between ingredients and translated_ingredients
             ingredients = [translated_ingredients[common_ingredients.index(ingredient)] for ingredient in ingredients]
             if category is not None:
-                category = translated_categories[common_categs.index(category)]
+                category = translated_categories[common_categories.index(category)]
             #translate units
             ingredient_units = [translation_unit_mapping(unit) for unit in ingredient_units]
 
 
         return {
-            'name': name,
+            'title': name,
             'source': source,
             'category': category,
             'url': url,
@@ -479,6 +476,6 @@ def process_line(line):
             'time': time,
             'difficulty': difficulty,
             'ingredients': ingredients,
-            'ingredient_values': ingredient_values,
-            'ingredient_units': ingredient_units
+            'ingredients_values': ingredient_values,
+            'ingredients_units': ingredient_units
         }

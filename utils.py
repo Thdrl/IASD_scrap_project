@@ -2,19 +2,24 @@ import json
 
 def get_db_params():
     return {
-    'dbname': 'your_db',
-    'user': 'your_user',
-    'password': 'your_password',
+    'dbname': 'recipe_db',
+    'user': 'postgres',
+    'password': 'password',
     'host': 'localhost'
     }
 
 def get_or_create_id(cursor, table, column, value):
-    cursor.execute(f"SELECT id FROM {table} WHERE {column} = %s", (value,))
+    if table == 'Categories':
+        table_id = 'CategoryID'
+    else:
+        table_id = f'{table[:-1]}ID'
+
+    cursor.execute(f"SELECT {table_id} FROM {table} WHERE {column} = %s", (value,))
     result = cursor.fetchone()
     if result:
         return result[0]
     else:
-        cursor.execute(f"INSERT INTO {table} ({column}) VALUES (%s) RETURNING id", (value,))
+        cursor.execute(f"INSERT INTO {table} ({column}) VALUES (%s) RETURNING {table_id}", (value,))
         return cursor.fetchone()[0]
     
 
@@ -25,10 +30,10 @@ def insert_line(cursor, processed_line, recipe_data):
         recipe_id = cursor.fetchone()[0]
 
         #recipe_ingredients & ingredients population
-        for ingredient in processed_line['ingredients']:
+        for i, ingredient in enumerate(processed_line['ingredients']):
             ingredient_id = get_or_create_id(cursor, 'Ingredients', 'Name', ingredient)
             cursor.execute("INSERT INTO RecipeIngredients (RecipeID, IngredientID, Quantity, Unit) VALUES (%s, %s, %s, %s)",
-                        (recipe_id, ingredient_id, processed_line['ingredient_values'][ingredient], processed_line['ingredient_units'][ingredient]))
+                        (recipe_id, ingredient_id, processed_line['ingredients_values'][i], processed_line['ingredients_units'][i]))
         
         #category data
         if processed_line['category']:

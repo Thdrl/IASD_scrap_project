@@ -5,8 +5,6 @@ from utils import get_db_params
 
 # Database connection parameters
 db_params = get_db_params()
-
-# Connect to your PostgreSQL database
 conn = psycopg2.connect(**db_params)
 cur = conn.cursor()
 
