@@ -269,17 +269,18 @@ def clean_ingredient(ingredients_str):
     for ingredient in ingredients:
         
         quantity, unit, name = parse_ingredient(ingredient)
-        if quantity is None:
-            return None
         quantities.append(quantity)
 
-        if unit not in valid_unit_list:
+        if unit not in valid_unit_list and unit is not None:
             name = unit + ' ' + name
             unit = None
         else:
             unit = normalize_unit(unit)   
         units.append(unit)
 
+        if name is None:
+            continue
+        
         name = name.strip()
         name = group_ingredients(name)
         names.append(name)
@@ -384,9 +385,12 @@ LANG = 'fr' #or 'en'
 def get_ingredients_and_translate(file, nb_ings=250):
     tot_ingredients = []
     for line in file:
-        line = ast.literal_eval(line)
+        try:
+            line = ast.literal_eval(line)
+        except ValueError:
+            continue
         ingredients = clean_ingredient(line['ingredients'])[2]
-        tot_ingredients.append(ingredients)
+        tot_ingredients.extend(ingredients)
 
     counts = Counter(tot_ingredients)
     #200 most common ingredients in a list 
