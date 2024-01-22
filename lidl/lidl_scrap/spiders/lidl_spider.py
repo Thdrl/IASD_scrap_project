@@ -33,7 +33,7 @@ def clean_instructions(instructions):
 class LidlSpider(scrapy.Spider):
     name = "lidl_spider"
     custom_settings = {
-        "DOWNLOAD_DELAY": ".25",
+        "DOWNLOAD_DELAY": ".1",
     }
 
     def start_requests(self):
@@ -60,16 +60,21 @@ class LidlSpider(scrapy.Spider):
 
       ingredients_values = []
       ingredients_units = []
-      for span in response.xpath("//td[contains(@class, 'oIngredientBox-ingQuantityCol')]//span[contains(@class, 'oIngredientBox-ingQuantity js_oIngredientBox-ingQuantity js_oIngredientBox-ingFromQuantity')]"):
-        value = span.xpath('./text()').get()
-        assert str(int(value)) == value, f'Value {value} is not an integer' 
-        value = int(value)
-        unit = span.xpath('./@data-unit-singular').get()
+      for td in response.xpath("//td[contains(@class, 'oIngredientBox-ingQuantityCol')]"):
+        span = td.xpath(".//span[contains(@class, 'oIngredientBox-ingQuantity js_oIngredientBox-ingQuantity js_oIngredientBox-ingFromQuantity')]")
+        if span:
+            value = span.xpath('./text()').get()
+            assert str(int(value)) == value, f'Value {value} is not an integer' 
+            value = int(value)
+            unit = span.xpath('./@data-unit-singular').get()
+        else:   
+            value = None
+            unit = None 
         
         ingredients_values.append(value)
         ingredients_units.append(unit) #necessary to get a 1-to-1 mapping between values and units
       
-      #assert len(ingredients) == len(ingredients_values), f'Number of ingredients ({len(ingredients)}) and number of ingredients values ({len(ingredients_values)}) do not match' 
+      assert len(ingredients) == len(ingredients_values), f'Number of ingredients ({len(ingredients)}) and number of ingredients values ({len(ingredients_values)}) do not match' 
       
       instruction_list = response.xpath("//div[contains(@class, 'ezrichtext-field')]//li/.//text()").getall()
       instructions = clean_instructions(instruction_list) 

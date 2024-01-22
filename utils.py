@@ -20,22 +20,37 @@ def get_or_create_id(cursor, table, column, value):
         return result[0]
     else:
         cursor.execute(f"INSERT INTO {table} ({column}) VALUES (%s) RETURNING {table_id}", (value,))
+        # cursor.execute(f"""
+        #     INSERT INTO {table} ({column}) VALUES (%s)
+        #     ON CONFLICT ({column}) DO UPDATE SET {column} = EXCLUDED.{column}
+        #     RETURNING {table_id}
+        #     """, (value,))
         return cursor.fetchone()[0]
     
 
-def insert_line(cursor, processed_line, recipe_data):
+def insert_line(cursor, recipe_data, ingredients_data, category):
     #insert and get recipe id
         cursor.execute("INSERT INTO Recipes (name, source, url, image, servings, time, difficulty, instructions) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
                         (recipe_data['name'], recipe_data['source'], recipe_data['url'], recipe_data['image'], recipe_data['servings'], recipe_data['time'], recipe_data['difficulty'], recipe_data['instructions']))
         recipe_id = cursor.fetchone()[0]
+        recipe_inserted = True
 
         #recipe_ingredients & ingredients population
-        for i, ingredient in enumerate(processed_line['ingredients']):
+        for i, ingredient in enumerate(ingredients_data['ingredients']):
             ingredient_id = get_or_create_id(cursor, 'Ingredients', 'Name', ingredient)
-            cursor.execute("INSERT INTO RecipeIngredients (RecipeID, IngredientID, Quantity, Unit) VALUES (%s, %s, %s, %s)",
-                        (recipe_id, ingredient_id, processed_line['ingredients_values'][i], processed_line['ingredients_units'][i]))
-        
+            cursor.execute("INSERT INTO RecipeIngredients (RecipeID, IngredientID, Quantity, Unit) VALUES (%s, %s, %s, %s) ON CONFLICT (RecipeID, IngredientID) DO NOTHING",
+                        (recipe_id, ingredient_id, ingredients_data['ingredients_values'][i], ingredients_data['ingredients_units'][i]))
+                
         #category data
-        if processed_line['category']:
-            category_id = get_or_create_id(cursor, 'Categories', 'Name', processed_line['category'])
-            cursor.execute("INSERT INTO RecipeCategories (RecipeID, CategoryID) VALUES (%s, %s)", (recipe_id, category_id))
+        if category:
+            category_id = get_or_create_id(cursor, 'Categories', 'Name', category)
+            cursor.execute("INSERT INTO RecipeCategories (RecipeID, CategoryID) VALUES (%s, %s)ON CONFLICT (RecipeID, CategoryID) DO NOTHING",
+                           (recipe_id, category_id))
+
+
+
+def get_lines(f):
+    f.seek(0)
+    n_lines = sum(1 for line in f)
+    f.seek(0)
+    return n_lines

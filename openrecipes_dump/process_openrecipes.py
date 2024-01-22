@@ -63,9 +63,9 @@ def time_to_min(time_str):
 
 def get_clean_time(line):
     #returns a single time (mn) value for the recipe line
-    prepTime = line['prepTime']
-    cookTime = line['cookTime']
-    totalTime = line['totalTime']
+    prepTime = line.get('prepTime')
+    cookTime = line.get('cookTime')
+    totalTime = line.get('totalTime')
 
     prepTime = time_to_min(prepTime)
     cookTime = time_to_min(cookTime)
@@ -382,7 +382,7 @@ def get_difficulty_from_nb_ingredients(nb_ingredients):
 LANG = 'fr' #or 'en'
 
 
-def get_ingredients_and_translate(file, nb_ings=250):
+def get_ingredients_and_translate(file, nb_ings=1000):
     tot_ingredients = []
     for line in file:
         try:
@@ -396,6 +396,10 @@ def get_ingredients_and_translate(file, nb_ings=250):
     #200 most common ingredients in a list 
     common_ingredients = [ing for ing,ct in counts.most_common(nb_ings)]
 
+    if LANG == 'en':
+        file.seek(0)
+        return common_ingredients, common_ingredients
+
     auth_key = '9093d919-3022-b8c7-19ba-93ceff08f8d7:fx'
     translator = deepl.Translator(auth_key)     
     translated_ingredients = []
@@ -405,6 +409,8 @@ def get_ingredients_and_translate(file, nb_ings=250):
 
 
     translated_ingredients = clean_translated_ingredients(translated_ingredients)
+
+    file.seek(0)
     return common_ingredients, translated_ingredients
 
 ##MAIN FUNC
@@ -418,11 +424,8 @@ def process_line(line, common_ingredients, translated_ingredients):
         #get raw data
         raw_ingredients = line.get('ingredients')
         recipeYield = line.get('recipeYield')
-        prepTime = line.get('prepTime')
         url = line.get('url')
         image = line.get('image')
-        totalTime = line.get('totalTime')
-        cookTime = line.get('cookTime')
         name = line.get('name') 
         source = line.get('source')
         category = line.get('recipeCategory')
@@ -447,17 +450,15 @@ def process_line(line, common_ingredients, translated_ingredients):
 
         #deletion checks
         if time is None:
-            return None
+            return None, 'misstime'
         if int(time) > 240:
-            return None
+            return None, 'longtime'
         if (len(ingredients) > 25) or (len(ingredients) < 3):
-            return None
+            return None ,'nb_ingredients'
         if recipeYield is None:
-            return None
+            return None, 'missyield'
         if any(uncommon_ingredient(ingredient, common_ingredients) for ingredient in ingredients):
-            return None
-        # if list(set(ingredients)) != ingredients:
-        #     return None
+            return None, 'uncommon_ingredient'
         
         #translate ingredients to french if LANG == 'fr'
         assert LANG in ['fr', 'en']
@@ -471,7 +472,7 @@ def process_line(line, common_ingredients, translated_ingredients):
 
 
         return {
-            'title': name,
+            'name': name,
             'source': source,
             'category': category,
             'url': url,
@@ -482,4 +483,4 @@ def process_line(line, common_ingredients, translated_ingredients):
             'ingredients': ingredients,
             'ingredients_values': ingredient_values,
             'ingredients_units': ingredient_units
-        }
+        }, None

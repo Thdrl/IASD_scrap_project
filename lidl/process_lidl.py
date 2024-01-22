@@ -17,4 +17,6 @@ def process_line(line):
     line['ingredients'] = [clean_french(ingredient) for ingredient in line['ingredients']]
     line['title'] = clean_french(line['title'])
     line['category'] = clean_french(line['category'])
+    #replace key title with name
+    line['name'] = line.pop('title')
     return line
