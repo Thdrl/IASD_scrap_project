@@ -11,6 +11,8 @@ def clean_french(string):
     string = unidecode.unidecode(string)
     string = string.lower()
     string = re.sub(r'œ', 'oe', string)
+    # Replace 'LINE SEPARATOR' with space
+    string = re.sub(r'\u2028', ' ', string) 
     return string
 
 def process_line(line):

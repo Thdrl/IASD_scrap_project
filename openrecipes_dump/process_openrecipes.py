@@ -449,6 +449,8 @@ def process_line(line, common_ingredients, translated_ingredients):
             category = None
 
         #deletion checks
+        if any(uncommon_ingredient(ingredient, common_ingredients) for ingredient in ingredients):
+            return None, 'uncommon_ingredient'   
         if time is None:
             return None, 'misstime'
         if int(time) > 240:
@@ -457,14 +459,17 @@ def process_line(line, common_ingredients, translated_ingredients):
             return None ,'nb_ingredients'
         if recipeYield is None:
             return None, 'missyield'
-        if any(uncommon_ingredient(ingredient, common_ingredients) for ingredient in ingredients):
-            return None, 'uncommon_ingredient'
+        
         
         #translate ingredients to french if LANG == 'fr'
         assert LANG in ['fr', 'en']
         if LANG == 'fr':
             #make the french translation by mapping the id between ingredients and translated_ingredients
-            ingredients = [translated_ingredients[common_ingredients.index(ingredient)] for ingredient in ingredients]
+            try:
+                ingredients = [translated_ingredients[common_ingredients.index(ingredient)] for ingredient in ingredients]
+            except:
+                return None, 'translation'
+            
             if category is not None:
                 category = translated_categories[common_categories.index(category)]
             #translate units

@@ -1,7 +1,7 @@
 import psycopg2
 from psycopg2 import sql
 
-from utils import get_db_params 
+from utils import get_db_params
 
 # Database connection parameters
 db_params = get_db_params()
@@ -9,7 +9,7 @@ conn = psycopg2.connect(**db_params)
 cur = conn.cursor()
 
 # SQL statements to create tables
-commands = (
+create_commands = (
     """
     CREATE TABLE IF NOT EXISTS Recipes (
         id SERIAL PRIMARY KEY,
@@ -66,16 +66,24 @@ commands = (
     """
 )
 
+drop_commands = (
+    "DROP TABLE IF EXISTS RecipeCategories CASCADE",
+    "DROP TABLE IF EXISTS Categories CASCADE",
+    "DROP TABLE IF EXISTS RecipeIngredients CASCADE",
+    "DROP TABLE IF EXISTS Ingredients CASCADE",
+    "DROP TABLE IF EXISTS Recipes CASCADE"
+)
 
-# Execute each SQL command
-for command in commands:
+for command in drop_commands:
     cur.execute(command)
-
-# Commit the changes to the database
 conn.commit()
+print("Existing tables deleted.")
+
+for command in create_commands:
+    cur.execute(command)
+conn.commit()
+print("Tables created.")
 
 # Close communication with the database
 cur.close()
 conn.close()
-
-print("Database tables created successfully.")

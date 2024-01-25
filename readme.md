@@ -24,28 +24,38 @@ Since it is of very high quality, the data from LIDL had very few processing, an
 - nb. of ingredients : Before iterating over the lines, the code finds the n most common ingredients in the file and keeps only the recipes with all ingredients in the common ones. With 250: 0.98%, 500: 1.56%, 1000: 2.44%, 2500: 3.87%. We keep 1000 as it is close to the number of ingredients from the other data.
 
 For the other parameters, we log the reason of exclusion in the process_line function. The entry deletion checks skipped 169043 (97%) lines with the following stats:
+
+- ingredient not in common list: 84894
+- too many (>25) or few (<3) ingredients: 49914
 - literal_eval error : 27247
-- time missing : 26125
-- time above 240mn: 4649
-- too many (>25) or few (<3) ingredients: 52044
-- yield missing: 7457
-- ingredient not in common list: 51521
+- time missing : 3792
+- time above 240mn: 2510
+- yield missing: 686
+- translation issue: 4
+
+
+{'literal_eval': 27247, 'misstime': 3792, 'longtime': 2510, 'nb_ingredients': 49914, 'missyield': 686, 'uncommon_ingredient': 84894, 'translation': 4}
 
 Note: since the checks are done sequentially, it does not represent the % of lines with the above problems.
 
-Since the data quality is important, the checks stay as is.
+Since the data quality is important, the checks stay as is, especially considering the database was user-generated.
 
 ## Tests on the db
 
 
 ## Usage
-Explain how to use the project after installation. Include any necessary command line commands, user interface instructions, or examples.
+Usage examples are provided in the ```examples.ipynb``` notebook. 
 
-## Contributing
-If you want others to contribute to your project, provide instructions on how to do so.
+## Next steps
 
-## Credits
-Acknowledge those who have contributed to the project.
+### Code improvements :
+- Apart from adding new data sources, the code for the openrecipes source could be adapted to be able to feed from different sources with the same code, allowing for easier expansion of the database.
 
-## License
-Include information about the license under which your project is distributed.
+- The ingredients-based filtering method relying on only keeping the recipes with ingredients in the $n$ most common ones in the db is harsh on the data, excluding around half of it. Furthermore, getting the common ingredients & translating them is memory-intensive as it searches through the whole data. 
+
+- Duplicates handling : as of now, no duplicate handling is in the code, this could become crucial if more data sources are added to the pipeline.
+
+- Profiling and optimization to reduce runtime for unclean data sources like openrecipes.
+
+### Real use-case
+One possible application is a "build-a-meal" tool, which could use AI to analyze a photo of the contents of a refrigerator. This application would identify the ingredients and their quantities, and then suggest recipes based on various criteria using the available items.

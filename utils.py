@@ -47,8 +47,6 @@ def insert_line(cursor, recipe_data, ingredients_data, category):
             cursor.execute("INSERT INTO RecipeCategories (RecipeID, CategoryID) VALUES (%s, %s)ON CONFLICT (RecipeID, CategoryID) DO NOTHING",
                            (recipe_id, category_id))
 
-
-
 def get_lines(f):
     f.seek(0)
     n_lines = sum(1 for line in f)
