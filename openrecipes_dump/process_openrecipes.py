@@ -1,15 +1,10 @@
-from pathlib import Path
-import re
-import os
-import json
 import re
 import unidecode
 import ast
 from collections import Counter
-from itertools import chain
-
-
+import tqdm
 import deepl
+
 
 ##YIELD CLEANING
 
@@ -382,9 +377,9 @@ def get_difficulty_from_nb_ingredients(nb_ingredients):
 LANG = 'fr' #or 'en'
 
 
-def get_ingredients_and_translate(file, nb_ings=1000):
+def get_ingredients_and_translate(file, n_lines, nb_ings=1000):
     tot_ingredients = []
-    for line in file:
+    for line in tqdm.tqdm(file, total=n_lines, desc=" OPENRECIPES Preprocessing (get + translate)"):
         try:
             line = ast.literal_eval(line)
         except ValueError:
@@ -449,6 +444,17 @@ def process_line(line, common_ingredients, translated_ingredients):
             category = None
 
         #deletion checks
+            
+        #for the deletion of recipes with uncommon ingredients, a way to keep more recipes without hindering the quality of the data, we choose to reduce the number of common ingredients but keep a more relax rule : a few ingredients can be uncommon
+        #nb of deletion with n_ok = 0 : 'uncommon_ingredient': 84894
+        #nb of deletion with n_ok = 1 : 'uncommon_ingredient': 71067
+        #nb of deletion with n_ok = 2 : 'uncommon_ingredient': 55630
+        
+        bool_common_list = [uncommon_ingredient(ingredient, common_ingredients) for ingredient in ingredients]
+        n_uncommon_ok = 2
+        if bool_common_list.count(True) > n_uncommon_ok:
+            return None, 'uncommon_ingredient'
+        
         if time is None:
             return None, 'misstime'
         if int(time) > 240:
@@ -457,14 +463,17 @@ def process_line(line, common_ingredients, translated_ingredients):
             return None ,'nb_ingredients'
         if recipeYield is None:
             return None, 'missyield'
-        if any(uncommon_ingredient(ingredient, common_ingredients) for ingredient in ingredients):
-            return None, 'uncommon_ingredient'
+        
         
         #translate ingredients to french if LANG == 'fr'
         assert LANG in ['fr', 'en']
         if LANG == 'fr':
             #make the french translation by mapping the id between ingredients and translated_ingredients
-            ingredients = [translated_ingredients[common_ingredients.index(ingredient)] for ingredient in ingredients]
+            try:
+                ingredients = [translated_ingredients[common_ingredients.index(ingredient)] for ingredient in ingredients]
+            except:
+                return None, 'translation'
+            
             if category is not None:
                 category = translated_categories[common_categories.index(category)]
             #translate units
