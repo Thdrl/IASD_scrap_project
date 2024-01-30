@@ -20,11 +20,6 @@ def get_or_create_id(cursor, table, column, value):
         return result[0]
     else:
         cursor.execute(f"INSERT INTO {table} ({column}) VALUES (%s) RETURNING {table_id}", (value,))
-        # cursor.execute(f"""
-        #     INSERT INTO {table} ({column}) VALUES (%s)
-        #     ON CONFLICT ({column}) DO UPDATE SET {column} = EXCLUDED.{column}
-        #     RETURNING {table_id}
-        #     """, (value,))
         return cursor.fetchone()[0]
     
 
@@ -46,6 +41,24 @@ def insert_line(cursor, recipe_data, ingredients_data, category):
             category_id = get_or_create_id(cursor, 'Categories', 'Name', category)
             cursor.execute("INSERT INTO RecipeCategories (RecipeID, CategoryID) VALUES (%s, %s)ON CONFLICT (RecipeID, CategoryID) DO NOTHING",
                            (recipe_id, category_id))
+
+def get_info_db(cursor):
+
+    #assert recipes table exist
+    cursor.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'recipes')")
+    assert cursor.fetchone()[0]
+
+    #check number of ingredients in db
+    cursor.execute("SELECT COUNT(*) FROM ingredients")
+    print('Number of ingredients in db: '+ str(cursor.fetchone()[0]))
+    #same for recipes
+    cursor.execute("SELECT COUNT(*) FROM recipes")
+    print('Number of recipes in db: '+ str(cursor.fetchone()[0]))
+    #same for categories
+    cursor.execute("SELECT COUNT(*) FROM categories")
+    print('Number of categories in db: '+ str(cursor.fetchone()[0]))
+    print('\n')
+    
 
 def get_lines(f):
     f.seek(0)
