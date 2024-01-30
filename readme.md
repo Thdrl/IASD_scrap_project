@@ -11,9 +11,44 @@ other sources were considered and could be implemented in a future version :
 - RecipeNLG Kaggle dataset : https://www.kaggle.com/datasets/paultimothymooney/recipenlg 1M+ cooking recipes (CSV)
 - TheMealDB : https://www.themealdb.com/api.php cooking recipes from around the world (API access)
 
-The database is made with psycopg2 postgresql python interface, using credentials that can be found in the get_db_params function from utils
+The database is made with psycopg2 postgresql python interface, and has the following structure : 
+### Categories
+- `categoryid`: The unique identifier for a category.
+- `name`: The name of the category.
 
+### Ingredients
+- `ingredientid`: The unique identifier for an ingredient.
+- `name`: The name of the ingredient.
 
+### RecipeIngredients
+- `recipeid`: The unique identifier for a recipe.
+- `ingredientid`: The unique identifier for an ingredient used in the recipe.
+- `quantity`: The quantity of the ingredient used in the recipe.
+- `unit`: The unit of measurement for the ingredient in the recipe.
+
+### RecipeCategories
+- `recipeid`: The unique identifier for a recipe.
+- `categoryid`: The unique identifier for a category assigned to the recipe.
+
+### Recipes
+- `id`: The unique identifier for a recipe.
+- `name`: The name of the recipe.
+- `time`: The time required to prepare the recipe.
+- `category`: The category of the recipe.
+- `source`: The source or origin of the recipe.
+- `url`: The URL of the recipe (if available).
+- `servings`: The number of servings the recipe yields.
+- `difficulty`: The difficulty level of the recipe.
+- `image`: The image associated with the recipe.
+- `instructions`: The cooking instructions for the recipe.
+
+## Relationships
+
+- The `RecipeIngredients` table associates ingredients with recipes based on their `recipeid` and `ingredientid`.
+- The `RecipeCategories` table links recipes to categories using their respective `recipeid` and `categoryid`.
+- The `Recipes` table stores extensive information about individual recipes, can be full recipes or simpler guidelines.
+
+(Above description is GPT-assisted)
 
 ## Data quality
 
