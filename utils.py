@@ -1,5 +1,8 @@
 import json
 
+def get_API_key():
+    return 'KEY'
+
 def get_db_params():
     return {
     'dbname': 'recipe_db',

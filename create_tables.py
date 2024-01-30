@@ -1,7 +1,7 @@
 import psycopg2
 from psycopg2 import sql
 
-from utils import get_db_params
+from utils import get_db_params, get_info_db
 
 # Database connection parameters
 db_params = get_db_params()
@@ -83,6 +83,9 @@ for command in create_commands:
     cur.execute(command)
 conn.commit()
 print("Tables created.")
+
+# Check database state
+get_info_db(cur)
 
 # Close communication with the database
 cur.close()

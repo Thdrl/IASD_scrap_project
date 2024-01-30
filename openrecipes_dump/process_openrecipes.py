@@ -5,6 +5,7 @@ from collections import Counter
 import tqdm
 import deepl
 
+from utils import get_API_key
 
 ##YIELD CLEANING
 
@@ -387,13 +388,13 @@ def get_ingredients_and_translate(file, n_lines, nb_ings=1000):
 
     counts = Counter(tot_ingredients)
     #200 most common ingredients in a list 
-    common_ingredients = [ing for ing,ct in counts.most_common(nb_ings)]
+    common_ingredients = [ing for ing, ct in counts.most_common(nb_ings)]
 
     if LANG == 'en':
         file.seek(0)
         return common_ingredients, common_ingredients
 
-    auth_key = '9093d919-3022-b8c7-19ba-93ceff08f8d7:fx'
+    auth_key = get_API_key()
     translator = deepl.Translator(auth_key)     
     translated_ingredients = []
     for ingredient in common_ingredients:
@@ -442,11 +443,6 @@ def process_line(line, common_ingredients, translated_ingredients):
             category = None
 
         #deletion checks
-            
-        #for the deletion of recipes with uncommon ingredients, a way to keep more recipes without hindering the quality of the data, we choose to reduce the number of common ingredients but keep a more relax rule : a few ingredients can be uncommon
-        #nb of deletion with n_ok = 0 : 'uncommon_ingredient': 84894
-        #nb of deletion with n_ok = 1 : 'uncommon_ingredient': 71067
-        #nb of deletion with n_ok = 2 : 'uncommon_ingredient': 55630
         
         bool_common_list = [uncommon_ingredient(ingredient, common_ingredients) for ingredient in ingredients]
         n_uncommon_ok = 2

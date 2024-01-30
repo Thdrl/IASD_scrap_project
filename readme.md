@@ -11,7 +11,7 @@ other sources were considered and could be implemented in a future version :
 - RecipeNLG Kaggle dataset : https://www.kaggle.com/datasets/paultimothymooney/recipenlg 1M+ cooking recipes (CSV)
 - TheMealDB : https://www.themealdb.com/api.php cooking recipes from around the world (API access)
 
-The database is made with psycopg2 postgresql python interface...
+The database is made with psycopg2 postgresql python interface, using credentials that can be found in the get_db_params function from utils
 
 
 
@@ -23,25 +23,28 @@ Since it is of very high quality, the data from LIDL had very few processing, an
 
 - nb. of ingredients : Before iterating over the lines, the code finds the n most common ingredients in the file and keeps only the recipes with all ingredients in the common ones. With 250: 0.98%, 500: 1.56%, 1000: 2.44%, 2500: 3.87%. We keep 1000 as it is close to the number of ingredients from the other data.
 
+For the deletion of recipes with uncommon ingredients, to keep more recipes without hindering the quality of the data, we choose to relax the rule : n_ok ingredients can be uncommon (i.e not in the common list)
+- #nb of deletion with n_ok = 0 : 'uncommon_ingredient': 84894
+- #nb of deletion with n_ok = 1 : 'uncommon_ingredient': 71067
+- #nb of deletion with n_ok = 2 : 'uncommon_ingredient': 55630
+
+
 For the other parameters, we log the reason of exclusion in the process_line function. The entry deletion checks skipped 169043 (97%) lines with the following stats:
 
-- ingredient not in common list: 84894
-- too many (>25) or few (<3) ingredients: 49914
+- ingredient not in common list: 55630
+- too many (>25) or few (<3) ingredients: 51755
 - literal_eval error : 27247
-- time missing : 3792
-- time above 240mn: 2510
-- yield missing: 686
-- translation issue: 4
+- translation issue: 17234
+- time missing : 10756
+- time above 240mn: 3127
+- yield missing: 3298
 
+Note: since the checks are done sequentially, it does not represent the % of lines with the above problems, but still give good insight on the issues during processing.
 
-{'literal_eval': 27247, 'misstime': 3792, 'longtime': 2510, 'nb_ingredients': 49914, 'missyield': 686, 'uncommon_ingredient': 84894, 'translation': 4}
-
-Note: since the checks are done sequentially, it does not represent the % of lines with the above problems.
-
-Since the data quality is important, the checks stay as is, especially considering the database was user-generated.
-
-## Tests on the db
-
+Since the data quality is important, the checks stay as is, especially considering the database was user-generated. Final stats : 
+Number of ingredients in db: 1589
+Number of recipes in db: 12695
+Number of categories in db: 17
 
 ## Usage
 Usage examples are provided in the ```examples.ipynb``` notebook. 
@@ -59,3 +62,8 @@ Usage examples are provided in the ```examples.ipynb``` notebook.
 
 ### Real use-case
 One possible application is a "build-a-meal" tool, which could use AI to analyze a photo of the contents of a refrigerator. This application would identify the ingredients and their quantities, and then suggest recipes based on various criteria using the available items.
+
+## Important notes 
+- A local postgresql account is required (used creds postgres/password)
+- a deepL API key is required (free version is enough)
+Both can be set in the utils.py file.
